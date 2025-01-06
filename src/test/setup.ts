@@ -1,55 +1,29 @@
-import * as dotenv from 'dotenv'
-import { type Writable } from 'type-fest'
-import { afterAll, beforeAll, beforeEach } from 'vitest'
-
-dotenv.config({ path: '.env.test' })
-
 import * as css from '@solid/community-server'
 import { IncomingMessage, Server, ServerResponse } from 'http'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { foaf } from 'rdf-namespaces'
+import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest'
 import { createApp } from '../app.js'
-import * as importedConfig from '../config/index.js'
-import { Thing } from '../database.js'
-import { type AppConfig } from '../middlewares/loadConfig.js'
-import {
-  createRandomAccount,
-  getDefaultPerson,
-  getRandomPort,
-} from './helpers/index.js'
+import { createRandomAccount, getRandomPort } from './helpers/index.js'
 import { createResource } from './helpers/setupPod.js'
 import type { Person } from './helpers/types.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-let server: Server<typeof IncomingMessage, typeof ServerResponse>
-let person: Person
-let person2: Person
-let person3: Person
+export interface TestContext {
+  css: { port: number; origin: string }
+  app: { port: number; origin: string; webId: string }
+  people: [Person, Person, Person]
+  community: { person: Person; community: string; group: string }
+}
+
 let cssServer: css.App
-let group: Person
-const appConfig: Writable<AppConfig> & { baseUrl: string } = {
-  ...importedConfig,
-  baseUrl: '',
-}
-const testConfig = {
-  cssPort: -1,
-  cssUrl: '',
-}
-
-beforeAll(() => {
-  testConfig.cssPort = getRandomPort()
-  testConfig.cssUrl = `http://localhost:${testConfig.cssPort}`
-
-  appConfig.indexedGroups = [testConfig.cssUrl + '/group/group#us']
-  appConfig.allowedGroups = appConfig.indexedGroups
-  appConfig.port = getRandomPort()
-  appConfig.baseUrl = `http://localhost:${appConfig.port}`
-  appConfig.webId = new URL('/profile/card#bot', appConfig.baseUrl).toString()
-})
+let cssPort: number
 
 beforeAll(async () => {
+  cssPort = getRandomPort()
+
   const start = Date.now()
 
   // eslint-disable-next-line no-console
@@ -61,14 +35,12 @@ beforeAll(async () => {
       typeChecking: false, // ?
       dumpErrorState: false, // disable CSS error dump
     },
-    config: css.joinFilePath(__dirname, './css-default-config.json'), // CSS appConfig
     variableBindings: {},
     // CSS cli options
     // https://github.com/CommunitySolidServer/CommunitySolidServer/tree/main#-parameters
     shorthand: {
-      port: testConfig.cssPort,
+      port: cssPort,
       loggingLevel: 'off',
-      seedConfig: css.joinFilePath(__dirname, './css-pod-seed.json'), // set up some Solid accounts
     },
   })
   await cssServer.start()
@@ -76,7 +48,7 @@ beforeAll(async () => {
   // eslint-disable-next-line no-console
   console.log(
     'CSS server started on port',
-    testConfig.cssPort,
+    cssPort,
     'in',
     (Date.now() - start) / 1000,
     'seconds',
@@ -87,58 +59,77 @@ afterAll(async () => {
   await cssServer.stop()
 })
 
-beforeAll(async () => {
-  const app = await createApp(appConfig)
+// save css variables into test context
+beforeEach<TestContext>(ctx => {
+  ctx.css = {
+    port: cssPort,
+    get origin() {
+      return `http://localhost:${this.port}`
+    },
+  }
+})
+
+/**
+ * Before each test, create a few persons and community
+ */
+beforeEach<TestContext>(async ctx => {
+  ctx.people = [
+    await createRandomAccount({ solidServer: ctx.css.origin }),
+    await createRandomAccount({ solidServer: ctx.css.origin }),
+    await createRandomAccount({ solidServer: ctx.css.origin }),
+  ]
+  ctx.community = {
+    person: await createRandomAccount({ solidServer: ctx.css.origin }),
+    get community() {
+      return new URL('community#us', this.person.podUrl).toString()
+    },
+    get group() {
+      return new URL('group#us', this.person.podUrl).toString()
+    },
+  }
+}, 20000)
+
+let server: Server<typeof IncomingMessage, typeof ServerResponse>
+beforeEach<TestContext>(async ctx => {
+  ctx.app = {
+    port: getRandomPort(),
+    get origin() {
+      return `http://localhost:${this.port}`
+    },
+    get webId() {
+      return new URL('/profile/card#bot', this.origin).toString()
+    },
+  }
+
+  const app = await createApp({
+    webId: ctx.app.webId,
+    groupToJoin: ctx.community.group,
+  })
 
   server = await new Promise(resolve => {
-    const srv = app.listen(appConfig.port, () => {
+    const srv = app.listen(ctx.app.port, () => {
       resolve(srv)
     })
   })
 })
 
-afterAll(async () => {
+afterEach(async () => {
   await new Promise(resolve => server.close(resolve))
 })
 
-// clear the database before each test
-beforeEach(async () => {
-  await Thing.destroy({ truncate: true })
-})
-
-/**
- * Before each test, create a new account and authenticate to it
- */
-beforeEach(async () => {
-  person = await createRandomAccount({ solidServer: testConfig.cssUrl })
-  person2 = await createRandomAccount({ solidServer: testConfig.cssUrl })
-  person3 = await createRandomAccount({ solidServer: testConfig.cssUrl })
-  // group = await createRandomAccount({ solidServer: cssUrl })
-
-  // this account is defined in css-pod-seed.json
-  group = await getDefaultPerson(
-    {
-      email: 'group@example',
-      password: 'correcthorsebatterystaple',
-      pods: [{ name: 'group' }],
-    },
-    testConfig.cssUrl,
-  )
-
-  if (!appConfig.indexedGroups[0]) throw new Error('No indexed groups')
-
+beforeEach<TestContext>(async ctx => {
+  // create the community
   await createResource({
-    url: appConfig.indexedGroups[0],
-    body: `
-      @prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
-      <#us> vcard:hasMember <${person.webId}>, <${person3.webId}>, <${appConfig.baseUrl}/profile/card#bot>.
-    `,
+    url: ctx.community.group,
+    body: ``,
     acls: [
-      { permissions: ['Read', 'Write', 'Control'], agents: [group.webId] },
+      {
+        permissions: ['Read', 'Write', 'Append', 'Control'],
+        agents: [ctx.community.person.webId],
+      },
       { permissions: ['Read'], agentClasses: [foaf.Agent] },
+      { permissions: ['Read', 'Write'], agents: [ctx.app.webId] },
     ],
-    authenticatedFetch: group.fetch,
+    authenticatedFetch: ctx.community.person.fetch,
   })
-}, 20000)
-
-export { appConfig, group, person, person2, testConfig }
+})

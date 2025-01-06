@@ -1,14 +1,16 @@
-# Solid Geoindex
+# Solid Community Inbox
 
-This service keeps track of Things of specific type that have a location on Earth and belong to defined groups of people.
+This service accepts Join and Leave activity sent by an authenticated person, validates the request, and adds or removes them from the given community accordingly. The inbox can be linked from community's URI by [`ldp:inbox`](http://www.w3.org/ns/ldp#inbox) predicate. It may also do some other membership tasks (or not).
 
 ## How it works
 
-- It's a bot agent with its own identity.
+- It's an agent with its own webId, and it needs read and write access to the community Solid pod.
 - It runs on a server.
-- When you create, update or remove a Thing, you send a notification to this service's inbox. The service will fetch and save the Thing's uri and location.
-- The service regularly crawls Things of its group members, and updates itself accordingly. (In case it missed a notification.)
-- The group members can query the service for Things at certain geohash, using Triple Pattern Fragment (not fully compatible, yet).
+- It has an `/inbox` endpoint.
+- When you POST a `Join` activity to the inbox, it validates that agent, object, and authenticated person all match; and possibly check other conditions. (Invite only, temporary joining, ...). If conditions are met, it adds the person's webId to one of the community groups.
+- When you POST a `Leave` activity to the inbox, it validates that agent, object, and authenticated person all match, and remove the person from the community groups.
+- It may also support invite-only communities, or admin reviews.
+- It may also regularly remove members who haven't validated their email (or not)
 
 ## Usage
 
@@ -58,14 +60,7 @@ Tests are placed in [src/test/](./src/test/)
 
 ## TODO
 
-- [ ] remove stale accommodations after index updates, otherwise they may hang there forever
-- [ ] maybe also validate and store the person, community, ... in the database. We may have index for multiple communities in the future.
-- [ ] maybe configure the server by providing its webId - that will provide baseUrl, hash, path to webId.
-- [ ] cache the groups, possibly with etags - they don't need to be fetched every time.
-
-## Maybe
-
-- [ ] index multiple communities, and show the results to particular community members only
+TODO
 
 ## License
 

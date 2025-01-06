@@ -1,12 +1,12 @@
 import { JSONSchemaType } from 'ajv/dist/2020.js'
 
 export const notification: JSONSchemaType<{
-  type: 'Create' | 'Update' | 'Delete'
+  type: 'Join'
   id: string
   '@context': 'https://www.w3.org/ns/activitystreams'
   actor: { type: 'Person'; id: string }
   object: {
-    type: 'Document' | 'Place'
+    type: 'Community'
     id: string
   }
 }> = {
@@ -17,7 +17,7 @@ export const notification: JSONSchemaType<{
       const: 'https://www.w3.org/ns/activitystreams',
     },
     id: { type: 'string' },
-    type: { type: 'string', enum: ['Create', 'Update', 'Delete'] },
+    type: { type: 'string', enum: ['Join'] },
     actor: {
       type: 'object',
       properties: {
@@ -29,7 +29,7 @@ export const notification: JSONSchemaType<{
     object: {
       type: 'object',
       properties: {
-        type: { type: 'string', enum: ['Document', 'Place'] },
+        type: { type: 'string', enum: ['Community'] },
         id: { type: 'string', format: 'uri' },
       },
       required: ['type', 'id'],
@@ -38,34 +38,3 @@ export const notification: JSONSchemaType<{
   required: ['@context', 'type', 'actor', 'object'],
   additionalProperties: false,
 }
-
-export const rawThingSchema = (
-  thingTypes: string[],
-): JSONSchemaType<{
-  types: string[]
-  latitudes: number[]
-  longitudes: number[]
-}> => ({
-  type: 'object',
-  properties: {
-    types: {
-      type: 'array',
-      minItems: 1,
-      items: { type: 'string' },
-      contains: { enum: thingTypes },
-    },
-    latitudes: {
-      type: 'array',
-      minItems: 1,
-      maxItems: 1,
-      items: { type: 'number' },
-    },
-    longitudes: {
-      type: 'array',
-      minItems: 1,
-      maxItems: 1,
-      items: { type: 'number' },
-    },
-  },
-  required: ['types', 'latitudes', 'longitudes'],
-})

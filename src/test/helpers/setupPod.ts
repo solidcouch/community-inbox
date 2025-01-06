@@ -1,6 +1,6 @@
 import { foaf, solid } from 'rdf-namespaces'
 import { expect } from 'vitest'
-import { getAcl, getContainer, getResource } from './index.js'
+import { getAcl, getResource } from './index.js'
 
 interface ACLConfig {
   permissions: ('Read' | 'Write' | 'Append' | 'Control')[]
@@ -10,35 +10,35 @@ interface ACLConfig {
   isDefault?: boolean
 }
 
-export const createContainer = async ({
-  url,
-  acls,
-  authenticatedFetch,
-}: {
-  url: string
-  acls?: ACLConfig[]
-  authenticatedFetch: typeof fetch
-}) => {
-  const response = await authenticatedFetch(getContainer(url), {
-    method: 'PUT',
-    headers: {
-      'content-type': 'text/turtle',
-      Link: '<http://www.w3.org/ns/ldp#BasicContainer>; rel="type"',
-    },
-  })
+// export const createContainer = async ({
+//   url,
+//   acls,
+//   authenticatedFetch,
+// }: {
+//   url: string
+//   acls?: ACLConfig[]
+//   authenticatedFetch: typeof fetch
+// }) => {
+//   const response = await authenticatedFetch(getContainer(url), {
+//     method: 'PUT',
+//     headers: {
+//       'content-type': 'text/turtle',
+//       Link: '<http://www.w3.org/ns/ldp#BasicContainer>; rel="type"',
+//     },
+//   })
 
-  expect(response.ok).toBe(true)
+//   expect(response.ok).toBe(true)
 
-  if (acls) {
-    for (const aclConfig of acls) {
-      await addAcl({
-        ...aclConfig,
-        resource: url,
-        authenticatedFetch,
-      })
-    }
-  }
-}
+//   if (acls) {
+//     for (const aclConfig of acls) {
+//       await addAcl({
+//         ...aclConfig,
+//         resource: url,
+//         authenticatedFetch,
+//       })
+//     }
+//   }
+// }
 
 export const createResource = async ({
   url,
@@ -70,32 +70,32 @@ export const createResource = async ({
   }
 }
 
-export const patchFile = async ({
-  url,
-  inserts = '',
-  deletes = '',
-  authenticatedFetch,
-}: {
-  url: string
-  inserts?: string
-  deletes?: string
-  authenticatedFetch: typeof fetch
-}) => {
-  if (!inserts && !deletes) return
-  const patch = `@prefix solid: <http://www.w3.org/ns/solid/terms#>.
+// export const patchFile = async ({
+//   url,
+//   inserts = '',
+//   deletes = '',
+//   authenticatedFetch,
+// }: {
+//   url: string
+//   inserts?: string
+//   deletes?: string
+//   authenticatedFetch: typeof fetch
+// }) => {
+//   if (!inserts && !deletes) return
+//   const patch = `@prefix solid: <http://www.w3.org/ns/solid/terms#>.
 
-  _:patch a solid:InsertDeletePatch;
-    ${inserts ? `solid:inserts { ${inserts} }` : ''}
-    ${inserts && deletes ? ';' : ''}
-    ${deletes ? `solid:deletes { ${deletes} }` : ''}
-    .`
-  const response = await authenticatedFetch(url, {
-    method: 'PATCH',
-    body: patch,
-    headers: { 'content-type': 'text/n3' },
-  })
-  expect(response.ok).toBe(true)
-}
+//   _:patch a solid:InsertDeletePatch;
+//     ${inserts ? `solid:inserts { ${inserts} }` : ''}
+//     ${inserts && deletes ? ';' : ''}
+//     ${deletes ? `solid:deletes { ${deletes} }` : ''}
+//     .`
+//   const response = await authenticatedFetch(url, {
+//     method: 'PATCH',
+//     body: patch,
+//     headers: { 'content-type': 'text/n3' },
+//   })
+//   expect(response.ok).toBe(true)
+// }
 
 const addAcl = async ({
   permissions,

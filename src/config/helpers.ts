@@ -4,7 +4,7 @@ export const stringToBoolean = (value: string | undefined): boolean => {
   return !!value
 }
 
-export const stringToArray = (value: string) => {
-  if (!value) return []
-  return value.split(/\s*,\s*/)
-}
+// export const stringToArray = (value: string) => {
+//   if (!value) return []
+//   return value.split(/\s*,\s*/)
+// }

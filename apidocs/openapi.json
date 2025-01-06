@@ -30,25 +30,6 @@
           }
         }
       }
-    },
-    "/query": {
-      "get": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "object",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
     }
   },
   "components": {

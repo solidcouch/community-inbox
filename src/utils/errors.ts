@@ -1,5 +1,3 @@
-import { ErrorObject } from 'ajv/dist/2020.js'
-
 export class HttpError extends Error {
   public status: number
   public response: Response
@@ -15,18 +13,18 @@ export class HttpError extends Error {
   }
 }
 
-export class ValidationError extends Error {
-  public errors: ErrorObject | unknown[]
+// export class ValidationError extends Error {
+//   public errors: ErrorObject | unknown[]
 
-  constructor(message: string, errors: ErrorObject | unknown[]) {
-    super(message)
-    this.name = 'ValidationError'
-    this.errors = errors
+//   constructor(message: string, errors: ErrorObject | unknown[]) {
+//     super(message)
+//     this.name = 'ValidationError'
+//     this.errors = errors
 
-    // Set the prototype explicitly to maintain correct instance type
-    Object.setPrototypeOf(this, ValidationError.prototype)
-  }
-}
+//     // Set the prototype explicitly to maintain correct instance type
+//     Object.setPrototypeOf(this, ValidationError.prototype)
+//   }
+// }
 
 export class ConfigError extends Error {
   constructor(message: string) {

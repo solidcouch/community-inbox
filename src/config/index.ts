@@ -1,14 +1,10 @@
-import { Options } from 'sequelize'
-import { hospex } from '../namespaces.js'
 import { ConfigError } from '../utils/errors.js'
-import { stringToArray, stringToBoolean } from './helpers.js'
+import { stringToBoolean } from './helpers.js'
 
-// define environment variables via .env file, or via environment variables directly (depends on your setup)
+// define environment variables via .env file, or via environment variables directly
 
 if (!process.env.PORT || isNaN(Number(process.env.PORT))) {
-  throw new ConfigError(
-    'Please specify the PORT at which the app should run in .env or environment variables',
-  )
+  throw new ConfigError('Please specify PORT in environment variables.')
 }
 export const port = +process.env.PORT
 
@@ -22,27 +18,9 @@ export const webId = new URL('/profile/card#bot', baseUrl).toString()
 
 export const isBehindProxy = stringToBoolean(process.env.BEHIND_PROXY)
 
-// indexed groups are required
-if (!process.env.INDEXED_GROUPS) {
+if (!process.env.GROUP_TO_JOIN)
   throw new ConfigError(
-    'Please specify comma-separated list of INDEXED_GROUPS in .env or environment variables',
+    'Please specify GROUP_TO_JOIN in environment variables.',
   )
-}
 
-export const indexedGroups = stringToArray(process.env.INDEXED_GROUPS)
-
-export const allowedGroups =
-  typeof process.env.ALLOWED_GROUPS === 'undefined'
-    ? indexedGroups
-    : stringToArray(process.env.ALLOWED_GROUPS)
-
-export const thingTypes = stringToArray(
-  process.env.THING_TYPES ?? hospex + 'Accommodation',
-)
-
-export const refreshSchedule = process.env.REFRESH_SCHEDULE ?? '0 */6 * * *'
-
-export const database: Options = {
-  dialect: 'sqlite',
-  storage: undefined,
-}
+export const groupToJoin = process.env.GROUP_TO_JOIN
