@@ -1,6 +1,7 @@
 import addFormats from 'ajv-formats'
 import { default as Ajv2020, type AnySchema } from 'ajv/dist/2020.js'
 import type { Middleware } from 'koa'
+import { ValidationError } from '../utils/errors.js'
 
 const ajv = new Ajv2020.default({ allErrors: true, strictNumbers: true })
 addFormats.default(ajv)
@@ -19,12 +20,5 @@ export const validateBody =
     const isValid = validate(ctx.request.body)
 
     if (isValid) return await next()
-    else {
-      ctx.response.status = 400
-      ctx.response.type = 'json'
-      ctx.response.body = {
-        message: 'Invalid data',
-        detail: validate.errors,
-      }
-    }
+    else throw new ValidationError('Invalid data', validate.errors ?? [])
   }

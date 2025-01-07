@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Implement a happy path for joining
+- Implement and test joining a group
 
 ### Changed
 

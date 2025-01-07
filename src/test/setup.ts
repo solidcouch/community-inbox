@@ -2,7 +2,7 @@ import * as css from '@solid/community-server'
 import { IncomingMessage, Server, ServerResponse } from 'http'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { foaf } from 'rdf-namespaces'
+import { foaf, vcard } from 'rdf-namespaces'
 import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest'
 import { createApp } from '../app.js'
 import { createRandomAccount, getRandomPort } from './helpers/index.js'
@@ -121,7 +121,7 @@ beforeEach<TestContext>(async ctx => {
   // create the community
   await createResource({
     url: ctx.community.group,
-    body: ``,
+    body: `<${new URL(ctx.community.group).hash}> a <${vcard.Group}>; <${vcard.hasMember}> <${ctx.people[2].webId}>.`,
     acls: [
       {
         permissions: ['Read', 'Write', 'Append', 'Control'],

@@ -1,7 +1,9 @@
 import { parseLinkHeader } from '@solid/community-server'
 import { createAccount, getAuthenticatedFetch } from 'css-authn/dist/7.x.js'
+import { Parser, Store } from 'n3'
 import assert from 'node:assert'
 import { randomUUID } from 'node:crypto'
+import { vcard } from 'rdf-namespaces'
 import { expect } from 'vitest'
 
 export const createRandomAccount = async ({
@@ -60,4 +62,27 @@ export function getRandomPort(): number {
   const min = 1024
   const max = 65535
   return Math.floor(Math.random() * (max - min + 1)) + min
+}
+
+export const checkMembership = async (
+  person: string,
+  group: string,
+  fetch: typeof globalThis.fetch = globalThis.fetch,
+) => {
+  // check that the person is in the group now
+  const groupResponse = await fetch(group)
+  expect(groupResponse.ok).toEqual(true)
+  const groupRaw = await groupResponse.text()
+  const quads = new Parser({ baseIRI: group }).parse(groupRaw)
+  const store = new Store(quads)
+  const found = store.getQuads(group, vcard.hasMember, person, null)
+
+  switch (found.length) {
+    case 0:
+      return false
+    case 1:
+      return true
+    default:
+      throw new Error('Member should be found maximum once.')
+  }
 }

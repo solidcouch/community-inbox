@@ -6,7 +6,7 @@ export const notification: JSONSchemaType<{
   '@context': 'https://www.w3.org/ns/activitystreams'
   actor: { type: 'Person'; id: string }
   object: {
-    type: 'Community'
+    type: 'Group'
     id: string
   }
 }> = {
@@ -29,7 +29,7 @@ export const notification: JSONSchemaType<{
     object: {
       type: 'object',
       properties: {
-        type: { type: 'string', enum: ['Community'] },
+        type: { type: 'string', enum: ['Group'] },
         id: { type: 'string', format: 'uri' },
       },
       required: ['type', 'id'],

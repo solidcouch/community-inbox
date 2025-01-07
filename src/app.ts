@@ -5,11 +5,12 @@ import { solidIdentity } from '@soid/koa'
 import Koa from 'koa'
 import helmet from 'koa-helmet'
 import serve from 'koa-static'
-import { addPersonToGroup } from './controllers/inbox.js'
+import { processRequest, verifyReqest } from './controllers/inbox.js'
 import { loadConfig } from './middlewares/loadConfig.js'
 import { solidAuth } from './middlewares/solidAuth.js'
 import { validateBody } from './middlewares/validate.js'
 import * as schema from './schema.js'
+import { handleErrors } from './utils/errors.js'
 
 export interface AppConfig {
   readonly webId: string
@@ -39,7 +40,8 @@ const createApp = async (config: AppConfig) => {
       }
       */
     validateBody(schema.notification),
-    addPersonToGroup(config.groupToJoin),
+    verifyReqest,
+    processRequest,
   )
 
   app
@@ -55,6 +57,7 @@ const createApp = async (config: AppConfig) => {
         encoding: 'utf-8',
       }),
     )
+    .use(handleErrors)
     .use(loadConfig(config))
     .use(serve('./apidocs'))
     .use(router.routes())
