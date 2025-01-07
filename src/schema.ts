@@ -1,7 +1,7 @@
 import { JSONSchemaType } from 'ajv/dist/2020.js'
 
 export const notification: JSONSchemaType<{
-  type: 'Join'
+  type: 'Join' | 'Leave'
   id: string
   '@context': 'https://www.w3.org/ns/activitystreams'
   actor: { type: 'Person'; id: string }
@@ -17,7 +17,7 @@ export const notification: JSONSchemaType<{
       const: 'https://www.w3.org/ns/activitystreams',
     },
     id: { type: 'string' },
-    type: { type: 'string', enum: ['Join'] },
+    type: { type: 'string', enum: ['Join', 'Leave'] },
     actor: {
       type: 'object',
       properties: {

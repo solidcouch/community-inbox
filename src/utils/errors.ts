@@ -5,10 +5,10 @@ export class HttpError extends Error {
   public status: number
   public response: Response
 
-  constructor(message: string, response: Response) {
+  constructor(message: string, response: Response, status?: number) {
     super(message)
     this.name = 'HttpError'
-    this.status = response.status
+    this.status = status ?? response.status
     this.response = response
 
     // Set the prototype explicitly to maintain correct instance type
@@ -49,6 +49,16 @@ export const handleErrors: Middleware = async (ctx, next) => {
       ctx.response.body = {
         message: e.message,
         detail: e.errors,
+      }
+    } else if (e instanceof HttpError) {
+      ctx.response.status = e.status
+      ctx.response.type = 'json'
+      ctx.response.body = {
+        message: e.message,
+        detail: {
+          status: e.status,
+          body: await e.response.text(),
+        },
       }
     } else throw e
   }

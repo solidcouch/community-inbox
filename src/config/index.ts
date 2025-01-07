@@ -1,5 +1,5 @@
 import { ConfigError } from '../utils/errors.js'
-import { stringToBoolean } from './helpers.js'
+import { envToArray, envToBoolean } from './helpers.js'
 
 // define environment variables via .env file, or via environment variables directly
 
@@ -16,7 +16,7 @@ const baseUrl =
 
 export const webId = new URL('/profile/card#bot', baseUrl).toString()
 
-export const isBehindProxy = stringToBoolean(process.env.BEHIND_PROXY)
+export const isBehindProxy = envToBoolean(process.env.BEHIND_PROXY)
 
 if (!process.env.GROUP_TO_JOIN)
   throw new ConfigError(
@@ -24,3 +24,5 @@ if (!process.env.GROUP_TO_JOIN)
   )
 
 export const groupToJoin = process.env.GROUP_TO_JOIN
+
+export const groupsToLeave = envToArray(process.env.GROUPS_TO_LEAVE)

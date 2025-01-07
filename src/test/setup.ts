@@ -104,6 +104,7 @@ beforeEach<TestContext>(async ctx => {
   const app = await createApp({
     webId: ctx.app.webId,
     groupToJoin: ctx.community.group,
+    groupsToLeave: [ctx.community.group],
   })
 
   server = await new Promise(resolve => {

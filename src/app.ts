@@ -5,7 +5,7 @@ import { solidIdentity } from '@soid/koa'
 import Koa from 'koa'
 import helmet from 'koa-helmet'
 import serve from 'koa-static'
-import { processRequest, verifyReqest } from './controllers/inbox.js'
+import { processRequest, verifyRequest } from './controllers/inbox.js'
 import { loadConfig } from './middlewares/loadConfig.js'
 import { solidAuth } from './middlewares/solidAuth.js'
 import { validateBody } from './middlewares/validate.js'
@@ -16,6 +16,7 @@ export interface AppConfig {
   readonly webId: string
   readonly isBehindProxy?: boolean
   readonly groupToJoin: string
+  readonly groupsToLeave: string[]
 }
 
 const createApp = async (config: AppConfig) => {
@@ -40,7 +41,7 @@ const createApp = async (config: AppConfig) => {
       }
       */
     validateBody(schema.notification),
-    verifyReqest,
+    verifyRequest,
     processRequest,
   )
 
