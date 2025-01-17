@@ -48,7 +48,7 @@ const createApp = async (config: AppConfig) => {
 
   app
     .use(helmet.default())
-    .use(cors())
+    .use(cors({ exposeHeaders: ['location'] }))
     .use(
       bodyParser({
         enableTypes: ['text', 'json'],
