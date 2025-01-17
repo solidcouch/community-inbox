@@ -175,4 +175,29 @@ describe('Leaving the community', () => {
     // check that the person is not in the group
     expect(await checkMembership(person.webId, ctx.community.group)).toBe(false)
   })
+
+  test<TestContext>("[object is community] should remove the actor from all predefined community's groups", async ctx => {
+    const person = ctx.people[2]
+
+    // check that the person is in the group
+    expect(await checkMembership(person.webId, ctx.community.group)).toBe(true)
+
+    // send request to the app
+    const response = await person.fetch(`${ctx.app.origin}/inbox`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/ld+json' },
+      body: JSON.stringify({
+        '@context': 'https://www.w3.org/ns/activitystreams',
+        type: 'Leave',
+        actor: { type: 'Person', id: person.webId },
+        object: { type: 'Group', id: ctx.community.community },
+      }),
+    })
+
+    // receive response 200
+    expect(response.status).toBe(200)
+
+    // check that the person is not in the group
+    expect(await checkMembership(person.webId, ctx.community.group)).toBe(false)
+  })
 })

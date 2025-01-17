@@ -105,6 +105,7 @@ beforeEach<TestContext>(async ctx => {
     webId: ctx.app.webId,
     groupToJoin: ctx.community.group,
     groupsToLeave: [ctx.community.group],
+    community: ctx.community.community,
   })
 
   server = await new Promise(resolve => {

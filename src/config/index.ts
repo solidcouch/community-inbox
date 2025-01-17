@@ -23,6 +23,8 @@ if (!process.env.GROUP_TO_JOIN)
     'Please specify GROUP_TO_JOIN in environment variables.',
   )
 
+export const community = process.env.COMMUNITY || undefined
+
 export const groupToJoin = process.env.GROUP_TO_JOIN
 
 export const groupsToLeave = envToArray(process.env.GROUPS_TO_LEAVE)

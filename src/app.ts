@@ -17,6 +17,7 @@ export interface AppConfig {
   readonly isBehindProxy?: boolean
   readonly groupToJoin: string
   readonly groupsToLeave: string[]
+  readonly community?: string
 }
 
 const createApp = async (config: AppConfig) => {

@@ -165,4 +165,32 @@ describe('Joining the community', () => {
     // check that a Location header is present
     expect(response.headers.get('location')).toBe(ctx.community.group)
   })
+
+  test<TestContext>('[community instead of group] 200 should add the actor to the predefined group', async ctx => {
+    const person = ctx.people[0]
+
+    // check that the person is not in the group
+    expect(await checkMembership(person.webId, ctx.community.group)).toBe(false)
+
+    // send request to the app
+    const response = await person.fetch(`${ctx.app.origin}/inbox`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/ld+json' },
+      body: JSON.stringify({
+        '@context': 'https://www.w3.org/ns/activitystreams',
+        type: 'Join',
+        actor: { type: 'Person', id: person.webId },
+        object: { type: 'Group', id: ctx.community.community },
+      }),
+    })
+
+    // receive response 200
+    expect(response.status).toBe(200)
+
+    // check that the person is in the group now
+    expect(await checkMembership(person.webId, ctx.community.group)).toBe(true)
+
+    // check that a Location header is present
+    expect(response.headers.get('location')).toBe(ctx.community.group)
+  })
 })

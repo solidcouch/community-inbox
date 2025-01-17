@@ -58,10 +58,6 @@ yarn test
 
 Tests are placed in [src/test/](./src/test/)
 
-## TODO
-
-TODO
-
 ## License
 
 MIT

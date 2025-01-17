@@ -11,7 +11,7 @@ export const verifyRequest: Middleware<{
   const actor = ctx.request.body.actor.id
   const authenticatedUser = ctx.state.user
   const object = ctx.request.body.object.id
-  const { groupToJoin, groupsToLeave } = ctx.state.config
+  const { groupToJoin, groupsToLeave, community } = ctx.state.config
   const task: 'Join' | 'Leave' = ctx.request.body.type
 
   if (actor !== authenticatedUser)
@@ -22,17 +22,22 @@ export const verifyRequest: Middleware<{
 
   switch (task) {
     case 'Join': {
-      if (object !== groupToJoin)
+      const allowedObjects = [groupToJoin]
+      if (community) allowedObjects.push(community)
+
+      if (!allowedObjects.includes(object))
         throw new ValidationError(
-          `Object does not match expected group.\nExpected: ${groupToJoin}\nActual: ${object}`,
+          `Object does not match expected group or community.\nExpected: ${allowedObjects.join(',')}\nActual: ${object}`,
           [],
         )
       break
     }
     case 'Leave': {
-      if (!groupsToLeave.includes(object))
+      const allowedObjects = [...groupsToLeave]
+      if (community) allowedObjects.push(community)
+      if (!allowedObjects.includes(object))
         throw new ValidationError(
-          `Object does not match any of the expected groups.\nExpected: ${groupsToLeave.join(',')}\nActual: ${object}`,
+          `Object does not match any of the expected groups or community.\nExpected: ${allowedObjects.join(',')}\nActual: ${object}`,
           [],
         )
       break
@@ -67,7 +72,7 @@ const joinGroup: Middleware<{
   user: string
   config: AppConfig
 }> = async ctx => {
-  const group = ctx.request.body.object.id
+  const group = ctx.state.config.groupToJoin
 
   const authFetch = await getAuthenticatedFetch(ctx.state.config.webId)
   const response = await authFetch(group, {
@@ -93,23 +98,82 @@ const leaveGroup: Middleware<{
   user: string
   config: AppConfig
 }> = async ctx => {
-  const group = ctx.request.body.object.id
+  const groupsToLeave: string[] = []
 
-  const authFetch = await getAuthenticatedFetch(ctx.state.config.webId)
-  const response = await authFetch(group, {
-    headers: { 'content-type': 'text/n3' },
-    method: 'PATCH',
-    body: `_:remove a <${solid.InsertDeletePatch}>;
+  // if object is a community, try removing person from all configured groups
+  if (ctx.request.body.object.id === ctx.state.config.community)
+    groupsToLeave.push(...ctx.state.config.groupsToLeave)
+  // other remove person from the specified group only
+  else groupsToLeave.push(ctx.request.body.object.id)
+
+  // attempt all defined removals
+  const settledResults = await Promise.allSettled(
+    groupsToLeave.map(async (group: string) => {
+      const authFetch = await getAuthenticatedFetch(ctx.state.config.webId)
+      return await authFetch(group, {
+        headers: { 'content-type': 'text/n3' },
+        method: 'PATCH',
+        body: `_:remove a <${solid.InsertDeletePatch}>;
         <${solid.deletes}> { <${group}> <${vcard.hasMember}> <${ctx.state.user}> . }.
       `,
-  })
+      })
+    }),
+  )
 
-  if (!response.ok)
-    throw new HttpError(
-      `Removing person ${ctx.state.user} from group ${group} failed.`,
-      response,
-      response.status === 409 ? 409 : 500,
-    )
+  // process results
+  const results = settledResults.reduce<{
+    // successful removals
+    success: { group: string; response: Response }[]
+    // http error responses
+    httpError: { group: string; response: Response }[]
+    // thrown errors
+    error: { group: string; error: unknown }[]
+  }>(
+    (results, result, i) => {
+      const group = groupsToLeave[i]
+      // this shouldn't happen, but skip just in case
+      if (!group) return results
 
-  ctx.status = 200
+      if (result.status === 'rejected') {
+        results.error.push({ group, error: result.reason })
+      } else if (result.value.ok) {
+        results.success.push({ group, response: result.value })
+      } else results.httpError.push({ group, response: result.value })
+
+      return results
+    },
+    { success: [], httpError: [], error: [] },
+  )
+
+  ctx.body = {
+    successes: results.success.map(r => r.group),
+    conflicts: results.httpError
+      .filter(r => r.response.status === 409)
+      .map(r => r.group),
+    errors: [
+      ...results.httpError
+        .filter(r => r.response.status !== 409)
+        .map(r => r.group),
+      ...results.error.map(r => r.group),
+    ],
+  }
+
+  // if some requests succeeded, return success
+  if (results.success.length > 0) ctx.status = 200
+  // if there is some unexpected failure, return internal server error
+  else if (
+    results.error.length > 0 ||
+    results.httpError.some(result => result.response.status !== 409)
+  )
+    ctx.status = 500
+  // if all errors are 409 Conflict, return 409 Conflict
+  // this is typically a result of trying to remove missing triple(s)
+  // https://solidproject.org/TR/protocol#server-patch-n3-semantics-deletions-non-empty-all-triples
+  else if (
+    results.httpError.length > 0 &&
+    results.httpError.every(result => result.response.status === 409)
+  )
+    ctx.status = 409
+  // and nothing else should be left over
+  else throw new Error('Unexpected error: unexpected condition')
 }
