@@ -8,10 +8,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const doc = {
   info: {
-    version: '',
-    title: 'SolidCouch Geoindex',
+    version: '0.3.1',
+    title: 'Solid Community Inbox',
     description:
-      'This is a geoindex for Solid apps. Read more at https://github.com/solidcouch/geoindex',
+      'This is an inbox for Solid-based community. Read more at https://github.com/solidcouch/community-inbox',
   },
   servers: [{ url: '/' }],
   tags: [],

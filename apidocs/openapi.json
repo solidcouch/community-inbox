@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "version": "1.0.0",
-    "title": "SolidCouch Geoindex",
-    "description": "This is a geoindex for Solid apps. Read more at https://github.com/solidcouch/geoindex"
+    "version": "0.3.1",
+    "title": "Solid Community Inbox",
+    "description": "This is an inbox for Solid-based community. Read more at https://github.com/solidcouch/community-inbox"
   },
   "servers": [
     {
